@@ -1,8 +1,8 @@
-import { demoProfile } from "@/lib/demo-data";
-import { levelProgress } from "@/lib/engines/xp";
+import { getProfile, levelProgress } from "@/lib/data/queries";
 
-export function TopBar() {
-  const lp = levelProgress(demoProfile.totalXp);
+export async function TopBar() {
+  const profile = await getProfile();
+  const lp = levelProgress(profile.totalXp);
   const greeting = (() => {
     const h = new Date().getHours();
     if (h < 12) return "Good morning";
@@ -16,7 +16,7 @@ export function TopBar() {
         <span className="live-dot h-2 w-2 rounded-full bg-electric shadow-[0_0_8px_var(--glow-electric)]" />
         <div>
           <div className="text-sm font-medium">
-            {greeting}, {demoProfile.displayName}
+            {greeting}, {profile.displayName}
           </div>
           <div className="text-xs text-fg-muted">
             {new Date().toLocaleDateString("en-US", {
@@ -44,10 +44,10 @@ export function TopBar() {
         </div>
         <div className="flex items-center gap-2 rounded-full bg-strain/12 px-2.5 py-1 text-strain">
           <span>🔥</span>
-          <span className="font-mono text-xs font-semibold">{demoProfile.currentStreak}</span>
+          <span className="font-mono text-xs font-semibold">{profile.currentStreak}</span>
         </div>
         <div className="grid h-9 w-9 place-items-center rounded-full bg-elevated font-display text-sm font-semibold">
-          {demoProfile.displayName?.[0] ?? "O"}
+          {profile.displayName?.[0] ?? "O"}
         </div>
       </div>
     </header>

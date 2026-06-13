@@ -2,13 +2,15 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { TrendChart } from "@/components/modules/TrendChart";
-import { demoDays, readinessForecast } from "@/lib/demo-data";
+import { getDays, readinessForecastOf } from "@/lib/data/queries";
 import { forecast } from "@/lib/engines/forecast";
 
-export default function AnalyticsPage() {
-  const readiness = demoDays.map((d) => d.readiness ?? 0);
-  const strain = demoDays.map((d) => d.strain ?? 0);
-  const hrv = demoDays.map((d) => d.hrvMs);
+export default async function AnalyticsPage() {
+  const { days } = await getDays(30);
+  const readiness = days.map((d) => d.readiness ?? 0);
+  const strain = days.map((d) => d.strain ?? 0);
+  const hrv = days.map((d) => d.hrvMs);
+  const readinessForecast = readinessForecastOf(days);
   const hrvForecast = forecast(hrv, 14);
 
   return (

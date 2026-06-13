@@ -2,7 +2,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { demoProfile } from "@/lib/demo-data";
+import { SignOutButton } from "@/components/modules/SignOutButton";
+import { getProfile } from "@/lib/data/queries";
 
 const INTEGRATIONS = [
   { name: "WHOOP", desc: "Strain, recovery, HRV", status: "Connect" },
@@ -11,7 +12,8 @@ const INTEGRATIONS = [
   { name: "Google Calendar", desc: "Plan sessions, sync events", status: "Connect" },
 ];
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  const demoProfile = await getProfile();
   return (
     <div className="space-y-6">
       <PageHeader title="Settings" subtitle="Profile, goals, integrations and account" />
@@ -52,6 +54,16 @@ export default function SettingsPage() {
             Model powering proactive coaching and briefings.
           </div>
           <Badge tone="ai">{process.env.OVERSEER_AI_MODEL ?? "claude-opus-4-8"}</Badge>
+        </div>
+      </Card>
+
+      <Card>
+        <CardLabel>Account</CardLabel>
+        <div className="mt-3 flex items-center justify-between">
+          <div className="text-sm text-fg-muted">
+            Sign out of Overseer OS on this device.
+          </div>
+          <SignOutButton />
         </div>
       </Card>
     </div>

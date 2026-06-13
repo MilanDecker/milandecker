@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardLabel } from "@/components/ui/Card";
-import { demoDays } from "@/lib/demo-data";
+import { getDays } from "@/lib/data/queries";
 
 function colorFor(readiness: number) {
   if (readiness >= 75) return "var(--color-recovery)";
@@ -8,8 +8,8 @@ function colorFor(readiness: number) {
   return "var(--color-danger)";
 }
 
-export default function CalendarPage() {
-  const days = demoDays;
+export default async function CalendarPage() {
+  const { days } = await getDays(30);
 
   return (
     <div className="space-y-6">

@@ -26,6 +26,15 @@ Build order (architecture-first). ✅ = delivered in v1.0 foundation.
     and edge caching tuning is post-v1.0
 14. ⏳ **Deployment** — Vercel + Supabase config documented in README
 
+## Read path (delivered)
+
+A unified data-access layer (`src/lib/data/queries.ts`) backs every page in
+two transparent modes: **connected** (live, RLS-scoped Supabase rows mapped to
+view models for a signed-in user) and **demo** (the seeded 30-day dataset).
+Pages just `await getDays()` / `getProfile()` / `getInsights()` — identical in
+both modes. Auth is completed end-to-end: magic-link `/auth/callback`
+(PKCE + OTP) and a sign-out action.
+
 ## Write path (delivered)
 
 Log forms (workout, sleep, meal) → server actions (`src/lib/actions/log.ts`)
@@ -42,6 +51,9 @@ connected.
 - **Strain Engine** — session load from duration, intensity, heart-rate zones.
 - **Forecast Engine** — EWMA trajectory + goal ETA projection.
 - **Achievement Engine** — declarative achievement defs evaluated on rollups.
+- **Insight Engine** — deterministic trend/risk/opportunity/milestone
+  detection powering the intelligence ticker; regenerated and persisted after
+  every log, and used as grounding for the AI layer.
 
 ## Definition of done (per feature)
 

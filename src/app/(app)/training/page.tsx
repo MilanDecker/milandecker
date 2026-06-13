@@ -3,7 +3,7 @@ import { Card, CardLabel } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { TrendChart } from "@/components/modules/TrendChart";
 import { LogWorkoutButton } from "@/components/modules/LogWorkoutButton";
-import { demoDays, weeklyStrain } from "@/lib/demo-data";
+import { getDays, weeklyStrainOf } from "@/lib/data/queries";
 
 const RECENT = [
   { title: "Lower Power", type: "strength", min: 62, strain: 14.2, vol: "8,420 kg" },
@@ -12,9 +12,11 @@ const RECENT = [
   { title: "Mobility Flow", type: "mobility", min: 25, strain: 3.4, vol: "—" },
 ];
 
-export default function TrainingPage() {
-  const strainSeries = demoDays.map((d) => d.strain ?? 0);
-  const sessions = demoDays.filter((d) => (d.strain ?? 0) > 0).length;
+export default async function TrainingPage() {
+  const { days } = await getDays(30);
+  const weeklyStrain = weeklyStrainOf(days);
+  const strainSeries = days.map((d) => d.strain ?? 0);
+  const sessions = days.filter((d) => (d.strain ?? 0) > 0).length;
 
   return (
     <div className="space-y-6">

@@ -6,26 +6,33 @@ import { Card, CardLabel } from "@/components/ui/Card";
 import { Ring } from "@/components/ui/Ring";
 import { SectionHeader } from "@/components/ui/SectionHeader";
 import {
-  demoDays,
-  demoInsights,
-  demoProfile,
-  readinessForecast,
-  today,
-  weeklyStrain,
-} from "@/lib/demo-data";
-import { levelProgress } from "@/lib/engines/xp";
+  avgSleepOf,
+  getDays,
+  getInsights,
+  getProfile,
+  levelProgress,
+  readinessForecastOf,
+  weeklyStrainOf,
+} from "@/lib/data/queries";
 import type { OverseerContext } from "@/lib/ai/overseer";
 
-export default function DashboardPage() {
-  const last7 = demoDays.slice(-7);
-  const avgSleep = Math.round(
-    last7.reduce((s, d) => s + (d.sleepMin ?? 0), 0) / last7.length,
-  );
-  const lp = levelProgress(demoProfile.totalXp);
+export default async function DashboardPage() {
+  const [{ days }, profile, { insights }] = await Promise.all([
+    getDays(30),
+    getProfile(),
+    getInsights(),
+  ]);
+
+  const last7 = days.slice(-7);
+  const today = days.at(-1)!;
+  const avgSleep = avgSleepOf(days);
+  const weeklyStrain = weeklyStrainOf(days);
+  const readinessForecast = readinessForecastOf(days);
+  const lp = levelProgress(profile.totalXp);
 
   const ctx: OverseerContext = {
-    level: demoProfile.level,
-    currentStreak: demoProfile.currentStreak,
+    level: profile.level,
+    currentStreak: profile.currentStreak,
     readinessToday: today.readiness ?? 0,
     readinessBand:
       (today.readiness ?? 0) >= 75 ? "primed" : (today.readiness ?? 0) >= 50 ? "moderate" : "low",
@@ -36,7 +43,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <IntelligenceTicker insights={demoInsights} />
+      <IntelligenceTicker insights={insights} />
 
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <Card className="flex flex-col justify-center">
@@ -107,7 +114,7 @@ export default function DashboardPage() {
               <span className="text-sm font-normal text-fg-muted"> / {lp.xpForNextLevel} XP</span>
             </div>
             <div className="mt-1 text-xs text-fg-muted">
-              {demoProfile.currentStreak}-day streak · {demoProfile.totalXp.toLocaleString()} total XP
+              {profile.currentStreak}-day streak · {profile.totalXp.toLocaleString()} total XP
             </div>
           </div>
         </Card>

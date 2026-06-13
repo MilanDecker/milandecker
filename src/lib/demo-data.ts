@@ -8,6 +8,7 @@ import { computeStrain } from "./engines/strain";
 import { computeReadiness } from "./engines/readiness";
 import { levelProgress } from "./engines/xp";
 import { forecast } from "./engines/forecast";
+import { detectInsights } from "./engines/insights";
 import type { DailyMetric, Insight, Profile } from "./types";
 
 // Seeded PRNG for stable output across renders/builds.
@@ -107,33 +108,26 @@ export const weeklyStrain = demoDays
   .slice(-7)
   .reduce((sum, d) => sum + (d.strain ?? 0), 0);
 
-export const demoInsights: Insight[] = [
-  {
-    id: "1",
-    kind: "trend",
-    title: "HRV trending up 8% over 14 days",
-    body: "Your autonomic recovery is improving — capacity for higher load.",
-    metric: "hrv",
-  },
-  {
-    id: "2",
-    kind: "risk",
-    title: "Sleep debt building",
-    body: "3 of the last 5 nights under 6.5h. Readiness is starting to dip.",
-    metric: "sleep",
-  },
-  {
-    id: "3",
-    kind: "opportunity",
-    title: "Primed for a hard session",
-    body: "Readiness is in the top band with low recent strain. Push today.",
-    metric: "readiness",
-  },
-  {
-    id: "4",
-    kind: "milestone",
-    title: "4 days from Level " + (demoProfile.level + 1),
-    body: "Maintain your streak to reach the next level by the weekend.",
-    metric: "xp",
-  },
-];
+// Insights are produced by the insight engine over the same data — not
+// hard-coded — so the ticker reflects the real signals in the dataset.
+const detected = detectInsights(
+  demoDays.map((d) => ({
+    readiness: d.readiness,
+    strain: d.strain,
+    sleepMin: d.sleepMin,
+    hrvMs: d.hrvMs,
+  })),
+  { level: demoProfile.level, totalXp: demoProfile.totalXp },
+);
+
+export const demoInsights: Insight[] = (detected.length > 0
+  ? detected
+  : [
+      {
+        kind: "opportunity" as const,
+        title: "Log today to start your streak",
+        body: "Record a workout, sleep or meal to begin building your performance picture.",
+        metric: "xp",
+      },
+    ]
+).map((d, i) => ({ id: String(i + 1), ...d }));

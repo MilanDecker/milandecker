@@ -3,10 +3,12 @@ import { Card, CardLabel } from "@/components/ui/Card";
 import { Ring } from "@/components/ui/Ring";
 import { TrendChart } from "@/components/modules/TrendChart";
 import { LogSleepButton } from "@/components/modules/LogSleepButton";
-import { demoDays, today } from "@/lib/demo-data";
+import { getDays } from "@/lib/data/queries";
 
-export default function RecoveryPage() {
-  const last7 = demoDays.slice(-7);
+export default async function RecoveryPage() {
+  const { days } = await getDays(30);
+  const today = days.at(-1)!;
+  const last7 = days.slice(-7);
   const avgSleep = last7.reduce((s, d) => s + (d.sleepMin ?? 0), 0) / last7.length;
 
   return (
@@ -54,14 +56,14 @@ export default function RecoveryPage() {
       <Card>
         <CardLabel>Readiness — last 30 days</CardLabel>
         <div className="mt-3">
-          <TrendChart data={demoDays.map((d) => d.readiness ?? 0)} color="var(--color-recovery)" />
+          <TrendChart data={days.map((d) => d.readiness ?? 0)} color="var(--color-recovery)" />
         </div>
       </Card>
 
       <Card>
         <CardLabel>Sleep duration — last 30 days</CardLabel>
         <div className="mt-3">
-          <TrendChart data={demoDays.map((d) => (d.sleepMin ?? 0) / 60)} color="var(--color-sleep)" />
+          <TrendChart data={days.map((d) => (d.sleepMin ?? 0) / 60)} color="var(--color-sleep)" />
         </div>
       </Card>
     </div>

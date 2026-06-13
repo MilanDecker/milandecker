@@ -4,19 +4,19 @@ import { Badge } from "@/components/ui/Badge";
 import { Ring } from "@/components/ui/Ring";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { ACHIEVEMENTS, type AchievementSnapshot } from "@/lib/engines/achievements";
-import { levelProgress } from "@/lib/engines/xp";
-import { demoDays, demoProfile, weeklyStrain } from "@/lib/demo-data";
+import { getDays, getProfile, levelProgress } from "@/lib/data/queries";
 
 const TIER_TONE = { bronze: "money", silver: "neutral", gold: "money" } as const;
 
-export default function AchievementsPage() {
+export default async function AchievementsPage() {
+  const [{ days }, demoProfile] = await Promise.all([getDays(30), getProfile()]);
   const lp = levelProgress(demoProfile.totalXp);
   const snapshot: AchievementSnapshot = {
-    totalWorkouts: demoDays.filter((d) => (d.strain ?? 0) > 0).length,
-    totalStrain: demoDays.reduce((s, d) => s + (d.strain ?? 0), 0),
+    totalWorkouts: days.filter((d) => (d.strain ?? 0) > 0).length,
+    totalStrain: days.reduce((s, d) => s + (d.strain ?? 0), 0),
     currentStreak: demoProfile.currentStreak,
     level: demoProfile.level,
-    nightsOver7h: demoDays.filter((d) => (d.sleepMin ?? 0) >= 420).length,
+    nightsOver7h: days.filter((d) => (d.sleepMin ?? 0) >= 420).length,
     proteinStreakDays: 4,
   };
 

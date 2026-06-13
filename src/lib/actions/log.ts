@@ -13,6 +13,7 @@ import {
   evaluateAchievements,
   type AchievementSnapshot,
 } from "@/lib/engines/achievements";
+import { detectInsights } from "@/lib/engines/insights";
 import type { WorkoutType } from "@/lib/types";
 
 export type ActionResult =
@@ -82,7 +83,57 @@ async function commit(
   );
 
   const unlocked = await evaluateAndUnlock(supabase, userId, t.level, profile?.current_streak ?? 0);
+  await refreshInsights(supabase, userId, t.level, t.totalXp);
   return { xp: award.amount, leveledUp: t.leveledUp, unlocked };
+}
+
+/**
+ * Regenerate the proactive insight feed from the latest 30 days. We clear the
+ * prior unacknowledged set and re-detect so the ticker always reflects current
+ * signals rather than accumulating stale entries.
+ */
+async function refreshInsights(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  level: number,
+  totalXp: number,
+): Promise<void> {
+  const since = new Date();
+  since.setDate(since.getDate() - 30);
+
+  const [{ data: metrics }, { data: sleep }] = await Promise.all([
+    supabase
+      .from("daily_metrics")
+      .select("day, readiness, strain, sleep_min")
+      .eq("user_id", userId)
+      .gte("day", since.toISOString().slice(0, 10))
+      .order("day", { ascending: true }),
+    supabase
+      .from("sleep_logs")
+      .select("night_of, hrv_ms")
+      .eq("user_id", userId)
+      .gte("night_of", since.toISOString().slice(0, 10)),
+  ]);
+
+  if (!metrics || metrics.length < 3) return;
+  const hrvByDay = new Map((sleep ?? []).map((s) => [s.night_of, s.hrv_ms]));
+
+  const detected = detectInsights(
+    metrics.map((m) => ({
+      readiness: m.readiness,
+      strain: m.strain != null ? Number(m.strain) : 0,
+      sleepMin: m.sleep_min,
+      hrvMs: hrvByDay.get(m.day) ?? 72,
+    })),
+    { level, totalXp },
+  );
+
+  await supabase.from("insights").delete().eq("user_id", userId).eq("acknowledged", false);
+  if (detected.length > 0) {
+    await supabase
+      .from("insights")
+      .insert(detected.map((d) => ({ user_id: userId, ...d })));
+  }
 }
 
 async function evaluateAndUnlock(

@@ -3,11 +3,13 @@ import { Card, CardLabel } from "@/components/ui/Card";
 import { Ring } from "@/components/ui/Ring";
 import { TrendChart } from "@/components/modules/TrendChart";
 import { LogMealButton } from "@/components/modules/LogMealButton";
-import { demoDays, today } from "@/lib/demo-data";
+import { getDays } from "@/lib/data/queries";
 
 const TARGETS = { calories: 2600, protein: 180, carbs: 280, fat: 80 };
 
-export default function NutritionPage() {
+export default async function NutritionPage() {
+  const { days } = await getDays(30);
+  const today = days.at(-1)!;
   const carbs = 240;
   const fat = 70;
 
@@ -47,14 +49,14 @@ export default function NutritionPage() {
       <Card>
         <CardLabel>Calories — last 30 days</CardLabel>
         <div className="mt-3">
-          <TrendChart data={demoDays.map((d) => d.calories ?? 0)} color="var(--color-money)" />
+          <TrendChart data={days.map((d) => d.calories ?? 0)} color="var(--color-money)" />
         </div>
       </Card>
 
       <Card>
         <CardLabel>Protein — last 30 days</CardLabel>
         <div className="mt-3">
-          <TrendChart data={demoDays.map((d) => d.proteinG ?? 0)} color="var(--color-recovery)" />
+          <TrendChart data={days.map((d) => d.proteinG ?? 0)} color="var(--color-recovery)" />
         </div>
       </Card>
     </div>
