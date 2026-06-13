@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Ring } from "@/components/ui/Ring";
 import { TrendChart } from "@/components/modules/TrendChart";
+import { LogSleepButton } from "@/components/modules/LogSleepButton";
 import { demoDays, today } from "@/lib/demo-data";
 
 export default function RecoveryPage() {
@@ -14,6 +15,7 @@ export default function RecoveryPage() {
         title="Recovery"
         subtitle="Sleep, HRV and resting heart rate — the inputs to readiness"
         accent="var(--color-recovery)"
+        action={<LogSleepButton />}
       />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr]">

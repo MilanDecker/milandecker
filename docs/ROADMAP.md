@@ -26,6 +26,15 @@ Build order (architecture-first). ✅ = delivered in v1.0 foundation.
     and edge caching tuning is post-v1.0
 14. ⏳ **Deployment** — Vercel + Supabase config documented in README
 
+## Write path (delivered)
+
+Log forms (workout, sleep, meal) → server actions (`src/lib/actions/log.ts`)
+→ persist raw log through RLS → engine **pipeline**
+(`src/lib/engines/pipeline.ts`) fans out to strain/readiness/XP → updates
+profile level, `xp_events`, `daily_metrics` rollup, and evaluates achievement
+unlocks → `revalidatePath`. Falls back to a clear message until Supabase is
+connected.
+
 ## Performance Engines (pure, deterministic, tested)
 
 - **XP Engine** — XP awards per action, level curve, progress to next level.

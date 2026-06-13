@@ -1,8 +1,8 @@
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { TrendChart } from "@/components/modules/TrendChart";
+import { LogWorkoutButton } from "@/components/modules/LogWorkoutButton";
 import { demoDays, weeklyStrain } from "@/lib/demo-data";
 
 const RECENT = [
@@ -21,7 +21,7 @@ export default function TrainingPage() {
       <PageHeader
         title="Training"
         subtitle="Sessions, load, and strain — computed by the strain engine"
-        action={<Button>Log Workout</Button>}
+        action={<LogWorkoutButton />}
       />
 
       <div className="grid gap-4 sm:grid-cols-3">

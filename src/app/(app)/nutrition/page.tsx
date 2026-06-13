@@ -1,8 +1,8 @@
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardLabel } from "@/components/ui/Card";
 import { Ring } from "@/components/ui/Ring";
-import { Button } from "@/components/ui/Button";
 import { TrendChart } from "@/components/modules/TrendChart";
+import { LogMealButton } from "@/components/modules/LogMealButton";
 import { demoDays, today } from "@/lib/demo-data";
 
 const TARGETS = { calories: 2600, protein: 180, carbs: 280, fat: 80 };
@@ -24,7 +24,7 @@ export default function NutritionPage() {
         title="Nutrition"
         subtitle="Fuel adequacy feeds directly into your readiness score"
         accent="var(--color-recovery)"
-        action={<Button variant="ghost">Log Meal</Button>}
+        action={<LogMealButton />}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
