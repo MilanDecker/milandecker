@@ -259,6 +259,7 @@
     z-index:60;box-shadow:0 8px 30px rgba(110,231,183,.25);
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.act{pointer-events:auto;}
   .restbar{
     position:fixed;left:50%;bottom:0;transform:translateX(-50%) translateY(120%);
     width:100%;max-width:520px;display:flex;align-items:center;gap:14px;
@@ -270,12 +271,32 @@
   .restbar .rnum{font-weight:800;font-size:28px;font-variant-numeric:tabular-nums;color:var(--mint);letter-spacing:-.02em;margin-left:auto;}
   .restbar.done .rnum{color:var(--faint);}
   .restbar .ractions{display:flex;gap:14px;margin-left:6px;}
+  .toast .undo{text-decoration:underline;font-weight:600;margin-left:6px;}
+
+  /* ---- editable sets + bottom sheet ---- */
+  .set-line.tap{cursor:pointer;}
+  .set-line.tap:active{background:rgba(255,255,255,.04);border-radius:12px;}
+  .hint{font-family:var(--serif);font-style:italic;font-size:14px;color:var(--ghost);margin-top:12px;}
+  .sheet{
+    position:fixed;inset:0;background:rgba(0,0,0,.62);opacity:0;pointer-events:none;
+    transition:opacity .25s ease;z-index:70;display:flex;align-items:flex-end;justify-content:center;
+  }
+  .sheet.show{opacity:1;pointer-events:auto;}
+  .sheet-card{
+    width:100%;max-width:520px;background:#000;border:1px solid var(--hair-strong);
+    border-radius:24px 24px 0 0;
+    padding:26px max(18px,env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+    transform:translateY(24px);transition:transform .25s ease;
+  }
+  .sheet.show .sheet-card{transform:none;}
+  .sheet-actions{display:flex;align-items:center;justify-content:space-between;margin-top:20px;}
 </style>
 </head>
 <body>
   <div id="app"></div>
   <div id="toast" class="toast"></div>
   <div id="rest" class="restbar"></div>
+  <div id="sheet" class="sheet"></div>
 
 <script>
 (function(){
@@ -393,12 +414,55 @@
   }
 
   var el=document.getElementById("app");
-  function toast(msg){
+  function toast(msg,undoFn){
     var t=document.getElementById("toast");
-    t.textContent=msg; t.classList.add("show");
-    clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove("show");},1900);
+    t.innerHTML=esc(msg)+(undoFn?' <span class="undo">undo</span>':"");
+    t.classList.add("show");
+    t.classList.toggle("act",!!undoFn);
+    t.onclick=undoFn?function(){ undoFn(); t.classList.remove("show"); }:null;
+    clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove("show");},undoFn?3800:1900);
   }
   function flash(id){ var r=el.querySelector('[data-sid="'+id+'"]'); if(r)r.classList.add("justwon"); }
+
+  /* ---------------- edit / delete a logged set ---------------- */
+  function openSetSheet(id){
+    var s=state.sets.filter(function(x){return x.id===id;})[0]; if(!s) return;
+    var x=state.exercises.filter(function(e){return e.id===s.exId;})[0];
+    var u=state.unit, sheet=document.getElementById("sheet");
+    sheet.innerHTML='<div class="sheet-card" id="sheetcard">'
+      +'<div class="masthead" style="font-style:italic">'+(x?esc(x.name):"set")+' · '+fmtDate(s.ts)+'</div>'
+      +'<h1 class="title ital" style="font-size:34px;margin:.1em 0 .4em">Fix this set</h1>'
+      +'<div style="display:flex;gap:14px;align-items:flex-end">'
+        +'<div class="field"><span class="label">weight ('+u+')</span><input id="ew" inputmode="decimal" value="'+fmt(s.w)+'"/></div>'
+        +'<div style="padding-bottom:20px;color:var(--faint);font-size:22px" class="serif ital">×</div>'
+        +'<div class="field"><span class="label">reps</span><input id="er" inputmode="numeric" value="'+s.r+'"/></div>'
+      +'</div>'
+      +'<div style="margin-top:20px"><button class="pill pill-primary" id="esave">save</button></div>'
+      +'<div class="sheet-actions"><button class="word" id="edel">delete set</button><button class="word" id="ecancel">cancel</button></div>'
+    +'</div>';
+    sheet.classList.add("show");
+    document.getElementById("sheetcard").addEventListener("click",function(e){ e.stopPropagation(); });
+    document.getElementById("esave").addEventListener("click",function(){
+      var w=parseFloat(document.getElementById("ew").value), r=parseInt(document.getElementById("er").value,10);
+      if(!(w>0)||!(r>0)){ toast("weight & reps, please"); return; }
+      s.w=w; s.r=r; save(); closeSheet(); render();
+    });
+    document.getElementById("edel").addEventListener("click",function(){ deleteSet(id); });
+    document.getElementById("ecancel").addEventListener("click",closeSheet);
+  }
+  function closeSheet(){ var sh=document.getElementById("sheet"); sh.classList.remove("show"); setTimeout(function(){ if(!sh.classList.contains("show")) sh.innerHTML=""; },260); }
+  function deleteSet(id){
+    var i=-1; for(var k=0;k<state.sets.length;k++){ if(state.sets[k].id===id){ i=k; break; } }
+    if(i<0) return;
+    var removed=state.sets[i], idx=i;
+    state.sets.splice(i,1); save(); closeSheet(); render();
+    toast("set removed",function(){ state.sets.splice(Math.min(idx,state.sets.length),0,removed); save(); render(); });
+  }
+  // one delegated handler: tap any set row to edit it
+  document.getElementById("sheet").addEventListener("click",closeSheet);
+  el.addEventListener("click",function(e){
+    var t=e.target.closest("[data-edit]"); if(t) openSetSheet(t.getAttribute("data-edit"));
+  });
 
   /* ---------------- live timer + rest bar ---------------- */
   var timerId=null, restEndTs=null;
@@ -640,7 +704,7 @@
       +'<span class="serif" style="font-size:24px">'+esc(x.name)+'</span>'
       +(b?'<span class="label">best · '+fmt(b.w)+' × '+b.r+'</span>':'<span class="label">no record yet</span>')+'</div>';
     sets.forEach(function(s,i){
-      h+='<div class="set-line'+(pr[s.id]?" pr":"")+'" data-sid="'+s.id+'">'
+      h+='<div class="set-line tap'+(pr[s.id]?" pr":"")+'" data-sid="'+s.id+'" data-edit="'+s.id+'">'
         +'<span class="roman">'+roman(i+1)+'</span>'
         +'<span class="val">'+fmt(s.w)+'<span class="unit">'+u+'</span></span>'
         +'<span class="val" style="color:var(--faint);font-weight:500">× '+s.r+'</span>'
@@ -777,13 +841,14 @@
       var total=arr.length;
       arr.forEach(function(s,i){
         var idx=total-i;
-        h+='<div class="set-line'+(s._pr?" pr":"")+'" data-sid="'+s.id+'">'
+        h+='<div class="set-line tap'+(s._pr?" pr":"")+'" data-sid="'+s.id+'" data-edit="'+s.id+'">'
           +'<span class="roman">'+roman(idx)+'</span>'
           +'<span class="val">'+fmt(s.w)+'<span class="unit">'+u+'</span></span>'
           +'<span class="val" style="color:var(--faint);font-weight:500">× '+s.r+'</span>'
           +(s._pr?'<span class="flag">new best</span>':'')
           +'<span class="e1">'+fmt(e1rm(s.w,s.r))+' 1rm</span></div>';
       });
+      h+='<div class="hint">tap any set to edit or remove it</div>';
       h+='</div>';
     } else {
       h+='<div class="empty"><p class="lede" style="font-size:18px">Enter a weight and reps above, then tap <span class="serif ital mint">log</span>. Your best set appears the moment it lands.</p></div>';
@@ -821,7 +886,7 @@
         +'<span class="serif ital" style="font-size:22px">'+fmtDate(g.ts)+'</span><span class="label">'+ago(g.ts)+'</span></div>';
       g.items.slice().reverse().forEach(function(s,i){
         var idx=g.items.length-i;
-        h+='<div class="set-line'+(s._pr?" pr":"")+'">'
+        h+='<div class="set-line tap'+(s._pr?" pr":"")+'" data-sid="'+s.id+'" data-edit="'+s.id+'">'
           +'<span class="roman">'+roman(idx)+'</span>'
           +'<span class="val">'+fmt(s.w)+'<span class="unit">'+u+'</span></span>'
           +'<span class="val" style="color:var(--faint);font-weight:500">× '+s.r+'</span>'
@@ -830,6 +895,7 @@
       });
       h+='</div>';
     });
+    h+='<div class="hint" style="text-align:center;margin-top:4px">tap any set to edit or remove it</div>';
     body.innerHTML=h;
   }
 
