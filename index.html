@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="theme-color" content="#000000" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Ascend</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+<style>
+  /* ============================================================
+     ASCEND — a workout ledger.
+     Pure black. One mint. Two fonts. One thing at a time.
+     Everything lives in localStorage; it works offline.
+     ============================================================ */
+
+  :root{
+    --bg:#000;
+    --mint:#6EE7B7;
+    --ink:#fff;
+    --muted:rgba(255,255,255,.55);
+    --faint:rgba(255,255,255,.32);
+    --ghost:rgba(255,255,255,.16);
+    --hair:rgba(255,255,255,.08);
+    --hair-strong:rgba(255,255,255,.14);
+    --serif:"Instrument Serif",Georgia,"Times New Roman",serif;
+    --sans:"Inter",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --radius:18px;
+    --pad:22px;
+  }
+
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--bg);}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overscroll-behavior-y:none;
+  }
+  input,button{font-family:inherit;color:inherit;}
+  button{border:0;background:none;cursor:pointer;}
+  ::selection{background:rgba(110,231,183,.25);}
+
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    min-height:100dvh;
+    padding:
+      max(18px,env(safe-area-inset-top))
+      max(18px,env(safe-area-inset-right))
+      calc(40px + env(safe-area-inset-bottom))
+      max(18px,env(safe-area-inset-left));
+  }
+
+  /* ---- type ---- */
+  .serif{font-family:var(--serif);}
+  .ital{font-style:italic;}
+  .masthead{
+    font-family:var(--serif);
+    font-size:15px;
+    letter-spacing:.02em;
+    color:var(--muted);
+    font-style:italic;
+  }
+  h1.title{
+    font-family:var(--serif);
+    font-weight:400;
+    font-size:44px;
+    line-height:1.02;
+    letter-spacing:-.01em;
+    margin:.28em 0 .1em;
+  }
+  h1.title.ital{font-style:italic;}
+  .lede{
+    font-family:var(--serif);
+    font-style:italic;
+    font-size:20px;
+    line-height:1.35;
+    color:var(--muted);
+    margin:0;
+  }
+  .label{
+    font-size:11px;
+    font-weight:600;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--faint);
+  }
+  .big-num{font-weight:800;font-size:30px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+  .roman{
+    font-family:var(--serif);
+    font-style:italic;
+    color:var(--faint);
+    font-size:15px;
+    width:1.6em;
+    display:inline-block;
+    text-align:center;
+    flex:0 0 auto;
+  }
+  .mint{color:var(--mint);}
+
+  /* ---- cards ---- */
+  .card{
+    border:1px solid var(--hair);
+    border-radius:var(--radius);
+    padding:var(--pad);
+    margin:14px 0;
+    background:#000;
+  }
+  .stack>*+*{margin-top:14px;}
+
+  /* ---- pills / actions ---- */
+  .pill{
+    display:inline-flex;align-items:center;justify-content:center;gap:.4em;
+    border-radius:999px;
+    min-height:52px;
+    padding:0 26px;
+    font-size:17px;
+    transition:transform .12s ease,opacity .2s ease,background .2s ease;
+  }
+  .pill:active{transform:scale(.97);}
+  .pill-primary{
+    background:var(--mint);
+    color:#000;
+    font-family:var(--serif);
+    font-style:italic;
+    font-size:22px;
+    font-weight:400;
+    width:100%;
+    box-shadow:0 0 0 0 rgba(110,231,183,.0);
+  }
+  .pill-ghost{
+    border:1px solid var(--hair-strong);
+    color:var(--ink);
+    background:#000;
+  }
+  .word{
+    font-family:var(--serif);
+    font-style:italic;
+    font-size:19px;
+    color:var(--muted);
+    padding:8px 4px;
+    line-height:1;
+    transition:color .18s ease;
+  }
+  .word:active{color:var(--ink);}
+  .word.on{color:var(--ink);}
+
+  /* ---- exercise list rows ---- */
+  .row{
+    display:flex;align-items:center;gap:16px;
+    width:100%;text-align:left;
+    padding:20px 22px;
+    border:1px solid var(--hair);
+    border-radius:var(--radius);
+    background:#000;
+    transition:border-color .18s ease,transform .12s ease;
+  }
+  .row:active{transform:scale(.99);border-color:var(--hair-strong);}
+  .row .name{font-family:var(--serif);font-size:26px;line-height:1.05;letter-spacing:-.01em;}
+  .row .sub{font-size:13px;color:var(--muted);margin-top:5px;font-variant-numeric:tabular-nums;}
+  .row .chev{margin-left:auto;color:var(--ghost);font-size:22px;flex:0 0 auto;}
+
+  /* ---- forms ---- */
+  .field{
+    display:flex;flex-direction:column;gap:9px;flex:1;
+  }
+  .field input{
+    background:#000;
+    border:1px solid var(--hair-strong);
+    border-radius:14px;
+    height:64px;
+    font-size:26px;font-weight:700;
+    text-align:center;
+    letter-spacing:-.01em;
+    font-variant-numeric:tabular-nums;
+    outline:none;
+    transition:border-color .18s ease;
+    width:100%;
+  }
+  .field input:focus{border-color:var(--mint);}
+  .field input::placeholder{color:var(--ghost);font-weight:600;}
+  .txt{
+    background:#000;border:1px solid var(--hair-strong);border-radius:14px;
+    height:58px;padding:0 20px;font-size:19px;width:100%;outline:none;
+    font-family:var(--serif);
+    transition:border-color .18s ease;
+  }
+  .txt:focus{border-color:var(--mint);}
+  .txt::placeholder{color:var(--ghost);font-style:italic;}
+
+  .set-line{
+    display:flex;align-items:center;gap:10px;
+    padding:14px 2px;
+    border-bottom:1px solid var(--hair);
+  }
+  .set-line:last-child{border-bottom:0;}
+  .set-line .val{font-weight:700;font-size:20px;font-variant-numeric:tabular-nums;letter-spacing:-.01em;}
+  .set-line .unit{color:var(--faint);font-weight:500;font-size:13px;margin-left:2px;}
+  .set-line .e1{margin-left:auto;color:var(--faint);font-size:13px;font-variant-numeric:tabular-nums;}
+  .set-line .flag{
+    margin-left:10px;font-family:var(--serif);font-style:italic;font-size:14px;color:var(--mint);
+    opacity:0;transform:translateX(-4px);
+  }
+  .set-line.pr .val{color:var(--mint);}
+  .set-line.pr .e1{color:var(--mint);}
+  .set-line.pr .flag{opacity:1;transform:none;transition:opacity .5s ease,transform .5s ease;}
+  @keyframes lightup{
+    0%{background:rgba(110,231,183,0);}
+    30%{background:rgba(110,231,183,.14);}
+    100%{background:rgba(110,231,183,0);}
+  }
+  .set-line.justwon{animation:lightup 1.6s ease-out;border-radius:12px;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:10px;}
+  .chip{
+    border:1px solid var(--hair-strong);border-radius:999px;
+    padding:11px 18px;font-family:var(--serif);font-size:17px;color:var(--muted);
+    background:#000;transition:color .16s,border-color .16s;
+  }
+  .chip:active{color:var(--ink);border-color:var(--mint);}
+
+  .stat{display:flex;flex-direction:column;gap:6px;}
+  .stat .k{font-size:11px;font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--faint);}
+  .stat .v{font-weight:800;font-size:26px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+  .stat .v.sub{font-weight:500;font-size:13px;color:var(--muted);letter-spacing:0;}
+
+  .topbar{display:flex;align-items:center;gap:14px;min-height:40px;}
+  .subnav{display:flex;gap:24px;align-items:center;margin:6px 2px 4px;}
+
+  .divider{height:1px;background:var(--hair);border:0;margin:22px 0;}
+
+  /* ---- chart ---- */
+  .chart-wrap{position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none;}
+  svg.chart{display:block;width:100%;height:auto;overflow:visible;}
+  .readout{
+    display:flex;align-items:baseline;gap:12px;margin-bottom:6px;min-height:44px;flex-wrap:wrap;
+  }
+  .readout .date{font-family:var(--serif);font-style:italic;font-size:19px;color:var(--muted);}
+  .readout .peak{font-weight:800;font-size:28px;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+  .readout .e{color:var(--faint);font-size:13px;font-variant-numeric:tabular-nums;}
+
+  .fade{animation:fade .4s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+
+  .empty{padding:30px 4px 8px;}
+  .toast{
+    position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+    background:var(--mint);color:#000;font-family:var(--serif);font-style:italic;font-size:19px;
+    padding:12px 26px;border-radius:999px;opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;
+    z-index:50;box-shadow:0 8px 30px rgba(110,231,183,.25);
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .unit-toggle{font-size:12px;color:var(--faint);font-weight:600;letter-spacing:.06em;padding:6px 10px;border:1px solid var(--hair);border-radius:999px;}
+</style>
+</head>
+<body>
+  <div id="app"></div>
+  <div id="toast" class="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------- storage ---------------- */
+  var KEY="ascend.v1";
+  var state={exercises:[],sets:[],unit:"kg"};
+  try{
+    var raw=localStorage.getItem(KEY);
+    if(raw){ var p=JSON.parse(raw); if(p&&p.exercises){ state=p; if(!state.unit)state.unit="kg"; } }
+  }catch(e){}
+  function save(){ try{ localStorage.setItem(KEY,JSON.stringify(state)); }catch(e){} }
+
+  /* ---------------- view state (not persisted) ---------------- */
+  var view={screen:"home",exId:null,tab:"log",lastW:"",lastR:""};
+
+  /* ---------------- helpers ---------------- */
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+  function e1rm(w,r){ return w*(1+r/30); } // Epley — fair score across weight/rep trades
+  function fmt(n){
+    if(n==null||isNaN(n)) return "—";
+    var v=Math.round(n*10)/10;
+    return (v%1===0)? String(v) : v.toFixed(1);
+  }
+  function roman(n){
+    var m=[[10,"x"],[9,"ix"],[5,"v"],[4,"iv"],[1,"i"]],out="";
+    n=Math.max(1,n);
+    for(var i=0;i<m.length;i++){ while(n>=m[i][0]){ out+=m[i][1]; n-=m[i][0]; } }
+    return out;
+  }
+  function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function dayKey(ts){ var d=new Date(ts); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); }
+  function fmtDate(ts){
+    var d=new Date(ts), now=new Date();
+    var mo=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var s=mo[d.getMonth()]+" "+d.getDate();
+    if(d.getFullYear()!==now.getFullYear()) s+=" "+d.getFullYear();
+    return s;
+  }
+  function ago(ts){
+    var diff=Date.now()-ts, day=864e5;
+    var d=Math.floor(diff/day);
+    if(d<=0) return "today";
+    if(d===1) return "yesterday";
+    if(d<7) return d+" days ago";
+    if(d<14) return "last week";
+    if(d<60) return Math.floor(d/7)+" weeks ago";
+    return Math.floor(d/30)+" months ago";
+  }
+
+  /* ---------------- domain ---------------- */
+  function setsFor(exId){
+    return state.sets.filter(function(s){return s.exId===exId;})
+                     .sort(function(a,b){return a.ts-b.ts;});
+  }
+  // best set ever (by e1rm) for an exercise
+  function bestSet(exId){
+    var arr=setsFor(exId), best=null;
+    arr.forEach(function(s){ if(!best||e1rm(s.w,s.r)>e1rm(best.w,best.r)) best=s; });
+    return best;
+  }
+  // mark each set as PR if its e1rm strictly beats everything logged before it
+  function withPR(exId){
+    var arr=setsFor(exId), run=-1;
+    arr.forEach(function(s){
+      var v=e1rm(s.w,s.r);
+      s._pr = v>run+1e-9;
+      if(v>run) run=v;
+    });
+    return arr;
+  }
+  // sessions: one entry per calendar day, carrying that day's top set
+  function sessions(exId){
+    var arr=setsFor(exId), byDay={};
+    arr.forEach(function(s){
+      var k=dayKey(s.ts), v=e1rm(s.w,s.r);
+      if(!byDay[k]||v>byDay[k].peak){
+        byDay[k]={key:k,ts:s.ts,peak:v,w:s.w,r:s.r};
+      } else { byDay[k].ts=Math.max(byDay[k].ts,s.ts); }
+    });
+    return Object.keys(byDay).map(function(k){return byDay[k];})
+                 .sort(function(a,b){return a.ts-b.ts;});
+  }
+  // trailing streak of sessions each beating the one before
+  function streak(exId){
+    var ss=sessions(exId), n=ss.length, c=0;
+    for(var i=n-1;i>0;i--){ if(ss[i].peak>ss[i-1].peak+1e-9) c++; else break; }
+    return c;
+  }
+
+  var el=document.getElementById("app");
+  function toast(msg){
+    var t=document.getElementById("toast");
+    t.textContent=msg; t.classList.add("show");
+    clearTimeout(t._t); t._t=setTimeout(function(){t.classList.remove("show");},1900);
+  }
+
+  /* ---------------- render root ---------------- */
+  function render(){
+    if(view.screen==="home") renderHome();
+    else renderExercise();
+    window.scrollTo(0,0);
+  }
+
+  /* ---------------- HOME ---------------- */
+  function renderHome(){
+    var ex=state.exercises;
+    var h='<div class="masthead">Ascend</div>';
+
+    if(ex.length===0){
+      h+=''
+      +'<h1 class="title ital">Lift.<br>Then beat it.</h1>'
+      +'<div class="empty">'
+      +'<p class="lede">Every strong lift starts with a name. Add your first, and start writing the record.</p>'
+      +'</div>'
+      +'<div class="card stack">'
+        +'<div class="label">start here</div>'
+        +'<div class="chips" id="starters"></div>'
+        +'<input class="txt" id="newname" placeholder="or type an exercise…" autocomplete="off" />'
+        +'<button class="pill pill-primary" id="addbtn">add exercise</button>'
+      +'</div>';
+      el.innerHTML=h;
+      wireStarters(); wireAdd();
+      return;
+    }
+
+    h+='<h1 class="title">Your lifts</h1>';
+    h+='<div class="stack" style="margin-top:20px">';
+    ex.forEach(function(x){
+      var b=bestSet(x.id);
+      var sub = b
+        ? '<span class="mint">'+fmt(b.w)+'</span> × '+b.r+' · best · '+ago(b.ts)
+        : 'no sets yet — tap to begin';
+      h+='<button class="row" data-ex="'+x.id+'">'
+        +  '<div><div class="name">'+esc(x.name)+'</div><div class="sub">'+sub+'</div></div>'
+        +  '<div class="chev">›</div>'
+        +'</button>';
+    });
+    h+='</div>';
+
+    h+='<div class="card stack" style="margin-top:22px">'
+      +'<div class="label">add another</div>'
+      +'<div style="display:flex;gap:10px">'
+        +'<input class="txt" id="newname" placeholder="new exercise…" autocomplete="off" style="flex:1" />'
+        +'<button class="pill pill-ghost" id="addbtn" style="min-height:58px"><span class="word on">add</span></button>'
+      +'</div>'
+    +'</div>';
+
+    el.innerHTML=h;
+    Array.prototype.forEach.call(el.querySelectorAll(".row"),function(r){
+      r.addEventListener("click",function(){ openExercise(r.getAttribute("data-ex")); });
+    });
+    wireAdd();
+  }
+
+  function wireStarters(){
+    var box=document.getElementById("starters");
+    if(!box) return;
+    ["Bench Press","Back Squat","Deadlift","Overhead Press","Barbell Row","Pull-Up"].forEach(function(name){
+      var c=document.createElement("button");
+      c.className="chip"; c.textContent=name;
+      c.addEventListener("click",function(){ addExercise(name,true); });
+      box.appendChild(c);
+    });
+  }
+  function wireAdd(){
+    var btn=document.getElementById("addbtn"), inp=document.getElementById("newname");
+    if(!btn||!inp) return;
+    function go(){ var v=inp.value.trim(); if(v) addExercise(v,true); }
+    btn.addEventListener("click",go);
+    inp.addEventListener("keydown",function(e){ if(e.key==="Enter") go(); });
+  }
+  function addExercise(name,open){
+    var existing=state.exercises.filter(function(x){return x.name.toLowerCase()===name.toLowerCase();})[0];
+    var x=existing||{id:uid(),name:name};
+    if(!existing) state.exercises.push(x);
+    save();
+    if(open) openExercise(x.id); else render();
+  }
+
+  function openExercise(id){
+    view.screen="exercise"; view.exId=id; view.tab="log"; view.lastW=""; view.lastR="";
+    render();
+  }
+  function goHome(){ view.screen="home"; render(); }
+
+  /* ---------------- EXERCISE ---------------- */
+  function renderExercise(){
+    var x=state.exercises.filter(function(e){return e.id===view.exId;})[0];
+    if(!x){ goHome(); return; }
+    var b=bestSet(x.id);
+
+    var h='<div class="topbar">'
+      +'<button class="word" id="swap">‹ swap</button>'
+      +'<span class="unit-toggle" id="unit">'+state.unit+'</span>'
+    +'</div>';
+
+    h+='<h1 class="title ital">'+esc(x.name)+'</h1>';
+    h+= b
+      ? '<div class="lede" style="font-size:17px">best · <span class="mint" style="font-style:normal;font-weight:700;font-family:var(--sans)">'+fmt(b.w)+'</span> × '+b.r+' &nbsp;·&nbsp; '+fmt(e1rm(b.w,b.r))+' est. 1rm</div>'
+      : '<p class="lede">The first set writes the story.</p>';
+
+    h+='<div class="subnav">'
+      +'<button class="word'+(view.tab==="log"?" on":"")+'" data-tab="log">log</button>'
+      +'<button class="word'+(view.tab==="chart"?" on":"")+'" data-tab="chart">chart</button>'
+      +'<button class="word'+(view.tab==="history"?" on":"")+'" data-tab="history">history</button>'
+    +'</div>';
+
+    h+='<div id="tabbody" class="fade"></div>';
+
+    el.innerHTML=h;
+    document.getElementById("swap").addEventListener("click",goHome);
+    document.getElementById("unit").addEventListener("click",function(){
+      state.unit=state.unit==="kg"?"lb":"kg"; save(); render();
+    });
+    Array.prototype.forEach.call(el.querySelectorAll("[data-tab]"),function(t){
+      t.addEventListener("click",function(){ view.tab=t.getAttribute("data-tab"); render(); });
+    });
+
+    var body=document.getElementById("tabbody");
+    if(view.tab==="log") renderLog(body,x);
+    else if(view.tab==="chart") renderChart(body,x);
+    else renderHistory(body,x);
+  }
+
+  /* ---- LOG tab ---- */
+  function renderLog(body,x){
+    var u=state.unit;
+    var h='<div class="card">'
+      +'<div style="display:flex;gap:14px;align-items:flex-end">'
+        +'<div class="field"><span class="label">weight ('+u+')</span>'
+          +'<input id="w" inputmode="decimal" placeholder="0" value="'+esc(view.lastW)+'" /></div>'
+        +'<div style="padding-bottom:20px;color:var(--faint);font-size:22px" class="serif ital">×</div>'
+        +'<div class="field"><span class="label">reps</span>'
+          +'<input id="r" inputmode="numeric" placeholder="0" value="'+esc(view.lastR)+'" /></div>'
+      +'</div>'
+      +'<div style="margin-top:18px"><button class="pill pill-primary" id="logbtn">log</button></div>'
+    +'</div>';
+
+    var arr=withPR(x.id).slice().reverse();
+    if(arr.length){
+      h+='<div class="card">';
+      h+='<div class="label" style="margin-bottom:6px">recent sets</div>';
+      var total=arr.length;
+      arr.forEach(function(s,i){
+        var idx=total-i; // chronological set number
+        h+='<div class="set-line'+(s._pr?" pr":"")+'" data-sid="'+s.id+'">'
+          +'<span class="roman">'+roman(idx)+'</span>'
+          +'<span class="val">'+fmt(s.w)+'<span class="unit">'+u+'</span></span>'
+          +'<span class="val" style="color:var(--faint);font-weight:500">× '+s.r+'</span>'
+          +(s._pr?'<span class="flag">new best</span>':'')
+          +'<span class="e1">'+fmt(e1rm(s.w,s.r))+' 1rm</span>'
+        +'</div>';
+      });
+      h+='</div>';
+    } else {
+      h+='<div class="empty"><p class="lede" style="font-size:18px">Enter a weight and reps above, then tap '
+        +'<span class="serif ital mint">log</span>. Your best set will appear the moment it lands.</p></div>';
+    }
+    body.innerHTML=h;
+
+    var wIn=document.getElementById("w"), rIn=document.getElementById("r");
+    wIn.addEventListener("input",function(){view.lastW=wIn.value;});
+    rIn.addEventListener("input",function(){view.lastR=rIn.value;});
+    rIn.addEventListener("keydown",function(e){ if(e.key==="Enter") doLog(x); });
+    document.getElementById("logbtn").addEventListener("click",function(){ doLog(x); });
+  }
+
+  function doLog(x){
+    var w=parseFloat(document.getElementById("w").value);
+    var r=parseInt(document.getElementById("r").value,10);
+    if(!(w>0)||!(r>0)){ toast("weight & reps, please"); return; }
+
+    var prevBest=bestSet(x.id);
+    var prevScore=prevBest?e1rm(prevBest.w,prevBest.r):-1;
+
+    var s={id:uid(),exId:x.id,w:w,r:r,ts:Date.now()};
+    state.sets.push(s); save();
+
+    var isPR = e1rm(w,r)>prevScore+1e-9 && prevScore>=0;
+    var isFirst = prevScore<0;
+    view.lastW=String(w); view.lastR=String(r);
+    render();
+
+    // celebrate + flash the just-logged row
+    var rowEl=el.querySelector('[data-sid="'+s.id+'"]');
+    if(rowEl){ rowEl.classList.add("justwon"); }
+    if(isPR) toast("new best — "+fmt(w)+" × "+r);
+    else if(isFirst) toast("first set logged");
+  }
+
+  /* ---- HISTORY tab ---- */
+  function renderHistory(body,x){
+    var u=state.unit;
+    var arr=withPR(x.id).slice().reverse();
+    if(!arr.length){
+      body.innerHTML='<div class="empty"><p class="lede">No history yet. Head to '
+        +'<span class="serif ital mint" style="font-style:italic">log</span> and put the first set on the board.</p></div>';
+      return;
+    }
+    // group by day
+    var groups=[], cur=null;
+    arr.forEach(function(s){
+      var k=dayKey(s.ts);
+      if(!cur||cur.key!==k){ cur={key:k,ts:s.ts,items:[]}; groups.push(cur); }
+      cur.items.push(s);
+    });
+    var h="";
+    groups.forEach(function(g){
+      h+='<div class="card">';
+      h+='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px">'
+        +'<span class="serif ital" style="font-size:22px">'+fmtDate(g.ts)+'</span>'
+        +'<span class="label">'+ago(g.ts)+'</span></div>';
+      // number within the day
+      g.items.slice().reverse().forEach(function(s,i){
+        var idx=g.items.length-i;
+        h+='<div class="set-line'+(s._pr?" pr":"")+'">'
+          +'<span class="roman">'+roman(idx)+'</span>'
+          +'<span class="val">'+fmt(s.w)+'<span class="unit">'+u+'</span></span>'
+          +'<span class="val" style="color:var(--faint);font-weight:500">× '+s.r+'</span>'
+          +(s._pr?'<span class="flag">new best</span>':'')
+          +'<span class="e1">'+fmt(e1rm(s.w,s.r))+' 1rm</span>'
+        +'</div>';
+      });
+      h+='</div>';
+    });
+    body.innerHTML=h;
+  }
+
+  /* ---- CHART tab ---- */
+  function renderChart(body,x){
+    var u=state.unit;
+    var ss=sessions(x.id);
+
+    if(ss.length===0){
+      body.innerHTML='<div class="empty"><p class="lede">A line needs points. Log a set in '
+        +'<span class="serif ital mint" style="font-style:italic">log</span> and the story starts here.</p></div>';
+      return;
+    }
+    if(ss.length===1){
+      var only=ss[0];
+      body.innerHTML='<div class="card"><div class="readout">'
+        +'<span class="peak">'+fmt(only.w)+'<span class="unit" style="font-size:14px;color:var(--faint)">'+u+'</span> × '+only.r+'</span>'
+        +'<span class="e">'+fmt(only.peak)+' est. 1rm · '+fmtDate(only.ts)+'</span></div>'
+        +'<p class="lede" style="font-size:17px;margin-top:8px">One session down. Come back after the next to watch the line move.</p>'
+        +'</div>'
+        + statBlock(x);
+      return;
+    }
+
+    // ---- build svg line of top-set e1rm per session ----
+    var VBW=340, VBH=170, PADX=14, PADT=18, PADB=14;
+    var n=ss.length;
+    var peaks=ss.map(function(s){return s.peak;});
+    var mn=Math.min.apply(null,peaks), mx=Math.max.apply(null,peaks);
+    if(mx-mn<1e-6){ mn-=1; mx+=1; }
+    var span=mx-mn, pad=span*0.18; mn-=pad; mx+=pad;
+    function X(i){ return n===1?VBW/2:PADX+i*(VBW-2*PADX)/(n-1); }
+    function Y(v){ return PADT+(1-(v-mn)/(mx-mn))*(VBH-PADT-PADB); }
+
+    var pts=ss.map(function(s,i){return [X(i),Y(s.peak)];});
+    var line=pts.map(function(p,i){return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1);}).join(" ");
+    var area=line+" L"+pts[n-1][0].toFixed(1)+" "+VBH+" L"+pts[0][0].toFixed(1)+" "+VBH+" Z";
+
+    var last=n-1;
+    var h='<div class="card">'
+      +'<div class="readout" id="readout"></div>'
+      +'<div class="chart-wrap" id="cwrap">'
+        +'<svg class="chart" viewBox="0 0 '+VBW+' '+VBH+'" preserveAspectRatio="none">'
+          +'<defs><linearGradient id="mg" x1="0" y1="0" x2="0" y2="1">'
+            +'<stop offset="0" stop-color="#6EE7B7" stop-opacity="0.16"/>'
+            +'<stop offset="1" stop-color="#6EE7B7" stop-opacity="0"/>'
+          +'</linearGradient></defs>'
+          +'<path d="'+area+'" fill="url(#mg)"/>'
+          +'<path d="'+line+'" fill="none" stroke="#6EE7B7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+          +'<line id="guide" x1="0" y1="0" x2="0" y2="'+VBH+'" stroke="rgba(255,255,255,.18)" stroke-width="1" style="opacity:0"/>'
+          +'<circle id="dot" r="4.5" fill="#000" stroke="#6EE7B7" stroke-width="2.5"/>'
+        +'</svg>'
+      +'</div>'
+      +'<div style="display:flex;justify-content:space-between;margin-top:8px" class="label">'
+        +'<span>'+fmtDate(ss[0].ts)+'</span><span>scrub to explore →</span><span>'+fmtDate(ss[last].ts)+'</span>'
+      +'</div>'
+    +'</div>';
+
+    h+=statBlock(x);
+    body.innerHTML=h;
+
+    // ---- interaction ----
+    var wrap=document.getElementById("cwrap");
+    var svg=wrap.querySelector("svg");
+    var dot=document.getElementById("dot");
+    var guide=document.getElementById("guide");
+    var readout=document.getElementById("readout");
+    var cur=-1;
+
+    function paint(i,active){
+      i=Math.max(0,Math.min(n-1,i));
+      var s=ss[i], px=X(i), py=Y(s.peak);
+      dot.setAttribute("cx",px); dot.setAttribute("cy",py);
+      dot.setAttribute("r",active?5.5:4.5);
+      guide.setAttribute("x1",px); guide.setAttribute("x2",px);
+      guide.style.opacity=active?"1":"0";
+      readout.innerHTML=''
+        +'<span class="peak">'+fmt(s.w)+'<span class="unit" style="font-size:14px;color:var(--faint)"> '+u+'</span> × '+s.r+'</span>'
+        +'<span class="e">'+fmt(s.peak)+' est. 1rm</span>'
+        +'<span class="date">'+fmtDate(s.ts)+'</span>';
+      cur=i;
+    }
+    function fromEvent(clientX){
+      var rect=svg.getBoundingClientRect();
+      var vbX=(clientX-rect.left)/rect.width*VBW;
+      var i = n===1?0:Math.round((vbX-PADX)/((VBW-2*PADX)/(n-1)));
+      return i;
+    }
+    paint(last,false); // default: latest session
+
+    var dragging=false;
+    function down(e){ dragging=true; var cx=e.touches?e.touches[0].clientX:e.clientX; paint(fromEvent(cx),true); if(e.cancelable)e.preventDefault(); }
+    function move(e){ if(!dragging)return; var cx=e.touches?e.touches[0].clientX:e.clientX; paint(fromEvent(cx),true); if(e.cancelable)e.preventDefault(); }
+    function up(){ if(!dragging)return; dragging=false; guide.style.opacity="0"; dot.setAttribute("r",4.5); paint(last,false); }
+    wrap.addEventListener("touchstart",down,{passive:false});
+    wrap.addEventListener("touchmove",move,{passive:false});
+    wrap.addEventListener("touchend",up);
+    wrap.addEventListener("mousedown",down);
+    window.addEventListener("mousemove",move);
+    window.addEventListener("mouseup",up);
+  }
+
+  function statBlock(x){
+    var b=bestSet(x.id), st=streak(x.id), u=state.unit;
+    var bestStr = b? (fmt(b.w)+" "+u+" × "+b.r) : "—";
+    var bestSub = b? (fmt(e1rm(b.w,b.r))+" est. 1rm · "+fmtDate(b.ts)) : "";
+    var strLabel = st===0 ? "not yet climbing"
+                 : st===1 ? "1 session up" : st+" sessions up";
+    return '<div class="card" style="display:flex;gap:24px">'
+      +'<div class="stat" style="flex:1">'
+        +'<div class="k">best ever</div>'
+        +'<div class="v mint">'+bestStr+'</div>'
+        +'<div class="v sub">'+bestSub+'</div>'
+      +'</div>'
+      +'<div style="width:1px;background:var(--hair)"></div>'
+      +'<div class="stat" style="flex:1">'
+        +'<div class="k">streak · beat last time</div>'
+        +'<div class="v'+(st>0?" mint":"")+'">'+st+'</div>'
+        +'<div class="v sub">'+strLabel+'</div>'
+      +'</div>'
+    +'</div>';
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
